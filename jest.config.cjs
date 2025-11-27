@@ -4,7 +4,5 @@ module.exports = {
   roots: ['<rootDir>/__tests__'],
   transform: {},
   moduleFileExtensions: ['js', 'mjs'],
-  // ESM support
-  extensionsToTreatAsEsm: ['.js', '.mjs'],
   testMatch: ['**/*.test.js']
 };

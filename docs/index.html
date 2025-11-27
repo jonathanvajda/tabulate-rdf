@@ -55,8 +55,7 @@
   </section>
 
   <!-- N3 as ES module from CDN -->
-  <script type="module">
-    import * as N3 from 'https://unpkg.com/n3@1.17.4/browser/n3.min.mjs';
+  <script type="module" src="./app/n3.min.js">
     window.N3 = N3; // expose globally so core.js can import from window.N3 in browser
   </script>
 

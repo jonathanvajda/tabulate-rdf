@@ -136,6 +136,7 @@ export function renderOntologyTable(container, ontologyMeta, tableModel) {
     th.className = 'ontoview-table-header-cell ontoview-table-header-cell-sortable';
     th.textContent = h;
     th.dataset.sortIndex = String(idx);
+    th.dataset.colKey = tableModel.keys[idx];   // NEW
     headRow.appendChild(th);
   });
 
@@ -163,6 +164,8 @@ export function renderOntologyTable(container, ontologyMeta, tableModel) {
         td.className = 'ontoview-table-data-cell';
 
         const key = tableModel.keys[i];
+        td.dataset.colKey = key;                    // NEW
+
         const value = key ? rowModel[key] : '';
         td.textContent = value || '';
         tr.appendChild(td);

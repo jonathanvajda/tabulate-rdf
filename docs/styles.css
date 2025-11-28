@@ -216,6 +216,7 @@
   vertical-align: top;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  min-width: 160px;
 }
 
 .ontoview-root.ontoview-theme-dark .ontoview-table-header-cell,
@@ -279,4 +280,35 @@
 
 .ontoview-root.ontoview-theme-dark .ontoview-mermaid-pre {
   background-color: #181818;
+}
+
+/* Wider columns for IRI and definition-like fields */
+.ontoview-table-header-cell[data-col-key="iri"],
+.ontoview-table-data-cell[data-col-key="iri"] {
+  min-width: 280px;
+}
+
+.ontoview-table-header-cell[data-col-key="definition"],
+.ontoview-table-data-cell[data-col-key="definition"],
+.ontoview-table-header-cell[data-col-key="definitionSource"],
+.ontoview-table-data-cell[data-col-key="definitionSource"] {
+  min-width: 260px;
+}
+
+/* Medium width for labels */
+.ontoview-table-header-cell[data-col-key="label"],
+.ontoview-table-data-cell[data-col-key="label"],
+.ontoview-table-header-cell[data-col-key="preferredLabel"],
+.ontoview-table-data-cell[data-col-key="preferredLabel"],
+.ontoview-table-header-cell[data-col-key="alternativeLabel"],
+.ontoview-table-data-cell[data-col-key="alternativeLabel"] {
+  min-width: 200px;
+}
+
+/* Narrow-ish for compact fields like acronym, curated-in */
+.ontoview-table-header-cell[data-col-key="acronym"],
+.ontoview-table-data-cell[data-col-key="acronym"],
+.ontoview-table-header-cell[data-col-key="isCuratedIn"],
+.ontoview-table-data-cell[data-col-key="isCuratedIn"] {
+  min-width: 150px;
 }

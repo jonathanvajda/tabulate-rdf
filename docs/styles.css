@@ -74,12 +74,12 @@
 
 /* Main layout */
 .ontoview-main {
-  padding: 1rem;
+  padding: 0rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/*  gap: 1rem; */
+/*  max-width: 1200px; */
+/*  margin: 0 auto; */
 }
 
 .ontoview-section-title {
@@ -159,6 +159,7 @@
   background-color: #fff;
   padding: 0.75rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  overflow-x: auto; /* allow wide tables */
 }
 
 .ontoview-root.ontoview-theme-dark .ontoview-table-wrapper {
@@ -192,10 +193,10 @@
 }
 
 .ontoview-table {
-  width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
-  table-layout: fixed;
+  min-width: 100%;
+  /* table-layout: auto so columns size to content */
 }
 
 .ontoview-table thead {
@@ -224,7 +225,8 @@
 
 .ontoview-table-header-cell {
   cursor: pointer;
-  white-space: nowrap;
+  max-width: 220px;   /* cap header width */
+  white-space: normal; /* allow wrapping */
 }
 
 .ontoview-table-header-cell-sortable::after {

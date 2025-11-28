@@ -162,7 +162,7 @@ export function renderOntologyTable(container, ontologyMeta, tableModel) {
         const td = document.createElement('td');
         td.className = 'ontoview-table-data-cell';
 
-        const key = i === 0 ? 'iri' : tableModel.predicates[i];
+        const key = tableModel.keys[i];
         const value = key ? rowModel[key] : '';
         td.textContent = value || '';
         tr.appendChild(td);
@@ -214,8 +214,7 @@ export function tableModelToCsv(model, rows) {
   const lines = [headerRow];
 
   rows.forEach(row => {
-    const values = model.headers.map((h, i) => {
-      const key = i === 0 ? 'iri' : model.predicates[i];
+    const values = model.keys.map(key => {
       const v = key ? (row[key] ?? '') : '';
       const escaped = String(v).replace(/"/g, '""');
       return `"${escaped}"`;

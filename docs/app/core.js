@@ -109,7 +109,10 @@ export const NS = {
   owl: 'http://www.w3.org/2002/07/owl#',
   dc: 'http://purl.org/dc/elements/1.1/',
   dcterms: 'http://purl.org/dc/terms/',
-  skos: 'http://www.w3.org/2004/02/skos/core#'
+  skos: 'http://www.w3.org/2004/02/skos/core#',
+  obo: 'http://purl.obolibrary.org/obo/',
+  cco: 'http://www.ontologyrepository.com/CommonCoreOntologies/',
+  cco2: 'https://www.commoncoreontologies.org/'
 };
 
 export const COMMON_PREFIXES = {
@@ -264,6 +267,104 @@ export function getPreferredIriForPredicates(store, subjectIri, predicateIris) {
     }
 
     return null;
+  } catch (err) {
+    logError(fnName, err, { subjectIri, predicateIris });
+    throw err;
+  }
+}
+
+/**
+ * Get all literal values for any of the given predicates.
+ * @param {import('n3').Store} store
+ * @param {string} subjectIri
+ * @param {string[]} predicateIris
+ * @returns {string[]}
+ */
+export function getLiteralArrayForPredicates(store, subjectIri, predicateIris) {
+  const fnName = 'getLiteralArrayForPredicates';
+  logEvent(fnName, 'start', { subjectIri });
+
+  try {
+    const subjectQuads = getQuadsForSubject(store, subjectIri);
+    const values = new Set();
+
+    subjectQuads.forEach(q => {
+      if (
+        q.predicate.termType === 'NamedNode' &&
+        predicateIris.includes(q.predicate.value) &&
+        q.object.termType === 'Literal'
+      ) {
+        values.add(q.object.value);
+      }
+    });
+
+    return Array.from(values);
+  } catch (err) {
+    logError(fnName, err, { subjectIri, predicateIris });
+    throw err;
+  }
+}
+
+/**
+ * Get all IRI values (NamedNodes, non-blank) for any of the given predicates.
+ * @param {import('n3').Store} store
+ * @param {string} subjectIri
+ * @param {string[]} predicateIris
+ * @returns {string[]}
+ */
+export function getIriArrayForPredicates(store, subjectIri, predicateIris) {
+  const fnName = 'getIriArrayForPredicates';
+  logEvent(fnName, 'start', { subjectIri });
+
+  try {
+    const subjectQuads = getQuadsForSubject(store, subjectIri);
+    const values = new Set();
+
+    subjectQuads.forEach(q => {
+      if (
+        q.predicate.termType === 'NamedNode' &&
+        predicateIris.includes(q.predicate.value) &&
+        q.object.termType === 'NamedNode' &&
+        !isBlankNode(q.object)
+      ) {
+        values.add(q.object.value);
+      }
+    });
+
+    return Array.from(values);
+  } catch (err) {
+    logError(fnName, err, { subjectIri, predicateIris });
+    throw err;
+  }
+}
+
+/**
+ * Get all values (literal or IRI) for any of the given predicates.
+ * @param {import('n3').Store} store
+ * @param {string} subjectIri
+ * @param {string[]} predicateIris
+ * @returns {string[]}
+ */
+export function getAnyArrayForPredicates(store, subjectIri, predicateIris) {
+  const fnName = 'getAnyArrayForPredicates';
+  logEvent(fnName, 'start', { subjectIri });
+
+  try {
+    const subjectQuads = getQuadsForSubject(store, subjectIri);
+    const values = new Set();
+
+    subjectQuads.forEach(q => {
+      if (
+        q.predicate.termType === 'NamedNode' &&
+        predicateIris.includes(q.predicate.value)
+      ) {
+        if (q.object.termType === 'Literal' || q.object.termType === 'NamedNode') {
+          values.add(q.object.value);
+        }
+      }
+    });
+
+    return Array.from(values);
   } catch (err) {
     logError(fnName, err, { subjectIri, predicateIris });
     throw err;
@@ -432,17 +533,28 @@ export function toPascalCase(name) {
 }
 
 /**
- * Build a columns + rows table model for ontology elements.
- * - First column is 'iri'
- * - Then rdf:type, rdfs:label, skos:altLabel, skos:definition (if present)
- * - Remaining predicates sorted alphabetically by CURIE/IRI
- * - Only include predicates that have at least one non-empty value
+ * Build a fixed-column table model for ontology elements.
+ *
+ * Columns (headers / keys):
+ *  - iri                / iri
+ *  - label              / label
+ *  - type               / type              (array of rdf:type IRIs, joined with "; ")
+ *  - definition         / definition
+ *  - preferred label    / preferredLabel
+ *  - alternative label  / alternativeLabel  (array, joined)
+ *  - acronym            / acronym           (array, joined)
+ *  - rdfs:subClassOf    / subClassOf        (array, joined)
+ *  - rdfs:subPropertyOf / subPropertyOf     (array, joined)
+ *  - definition source  / definitionSource  (array, joined)
+ *  - is curated in      / isCuratedIn
+ *
+ * Columns with no values across all rows are removed (except "iri").
  *
  * @param {import('n3').Store} store
  * @returns {{
- *   headers: string[],   // header labels (CURIE or IRI)
- *   predicates: string[],// predicate IRIs aligned with headers (headers[0] is 'iri' with null)
- *   rows: Array<Record<string, string>> // values as string (join multi-values with '; ')
+ *   headers: string[],
+ *   keys: string[],
+ *   rows: Array<Record<string, string>>
  * }}
  */
 export function buildElementTableModel(store) {
@@ -450,105 +562,153 @@ export function buildElementTableModel(store) {
   logEvent(fnName, 'start');
 
   try {
-    const rdfType = NS.rdf + 'type';
-    const priorityPreds = [
-      rdfType,
-      NS.rdfs + 'label',
-      NS.skos + 'altLabel',
-      NS.skos + 'definition'
-    ];
-
     const allQuads = store.getQuads(null, null, null, null);
-    const subjectMap = new Map();        // subject IRI -> Map<pred IRI, string[]>
-    const subjectTermMap = new Map();    // subject IRI -> Term
 
-    for (const q of allQuads) {
-      if (isBlankNode(q.subject)) continue;
-      if (isBlankNode(q.object)) continue; // skip blank-node objects
-
-      const subjIri = q.subject.value;
-      const predIri = q.predicate.value;
-
-      // remember the actual subject term
-      if (!subjectTermMap.has(subjIri)) {
-        subjectTermMap.set(subjIri, q.subject);
+    // collect NamedNode subjects (non-blank)
+    const subjectTermMap = new Map(); // IRI -> Term
+    allQuads.forEach(q => {
+      if (!isBlankNode(q.subject) && q.subject.termType === 'NamedNode') {
+        subjectTermMap.set(q.subject.value, q.subject);
       }
+    });
 
-      let predMap = subjectMap.get(subjIri);
-      if (!predMap) {
-        predMap = new Map();
-        subjectMap.set(subjIri, predMap);
-      }
-
-      const obj = q.object;
-      let value;
-
-      if (obj.termType === 'Literal') {
-        value = obj.value;
-      } else if (obj.termType === 'NamedNode') {
-        value = obj.value;
-      } else {
-        continue;
-      }
-
-      let arr = predMap.get(predIri);
-      if (!arr) {
-        arr = [];
-        predMap.set(predIri, arr);
-      }
-      if (!arr.includes(value)) {
-        arr.push(value);
-      }
-    }
-
-    // Filter subjects to ontology elements (using the real Term objects)
+    // Filter to ontology elements
     const elementSubjects = Array.from(subjectTermMap.values())
       .filter(subj => shouldIncludeElementSubject(store, subj));
 
-    // Collect used predicates (excluding none)
-    const usedPredsSet = new Set();
+    const rows = [];
+
     for (const subj of elementSubjects) {
-      const predMap = subjectMap.get(subj.value);
-      if (!predMap) continue;
-      for (const predIri of predMap.keys()) {
-        usedPredsSet.add(predIri);
-      }
+      const iri = subj.value;
+
+      const label = getPreferredLiteralForPredicates(store, iri, [
+        NS.rdfs + 'label',
+        NS.dcterms + 'title',
+        NS.dc + 'title'
+      ]);
+
+      const typeArr = getIriArrayForPredicates(store, iri, [
+        NS.rdf + 'type'
+      ]);
+
+      const definition = getPreferredLiteralForPredicates(store, iri, [
+        NS.skos + 'definition',
+        NS.obo + 'IAO_0000115',
+        NS.cco + 'definition'
+      ]);
+
+      const preferredLabel = getPreferredLiteralForPredicates(store, iri, [
+        NS.skos + 'prefLabel',
+        NS.obo + 'IAO_0000111'
+      ]);
+
+      const alternativeLabelArr = getLiteralArrayForPredicates(store, iri, [
+        NS.skos + 'altLabel',
+        NS.obo + 'IAO_0000118',
+        NS.cco + 'alternative_label'
+      ]);
+
+      const acronymArr = getLiteralArrayForPredicates(store, iri, [
+        NS.cco + 'acronym',
+        NS.obo + 'IAO_0000606',
+        NS.cco2 + 'ont00001753'
+      ]);
+
+      const subClassOfArr = getIriArrayForPredicates(store, iri, [
+        NS.rdfs + 'subClassOf'
+      ]);
+
+      const subPropertyOfArr = getIriArrayForPredicates(store, iri, [
+        NS.rdfs + 'subPropertyOf'
+      ]);
+
+      const definitionSourceArr = getAnyArrayForPredicates(store, iri, [
+        NS.dcterms + 'bibliographicCitation',
+        NS.obo + 'IAO_0000119',
+        NS.cco2 + 'ont00001754',
+        NS.cco + 'definition_source',
+        NS.cco2 + 'ont00001745',
+        NS.cco + 'doctrinal_source'
+      ]);
+
+      const isCuratedIn = getPreferredIriForPredicates(store, iri, [
+        NS.cco2 + 'ont00001760',
+        NS.rdfs + 'isDefinedBy'
+      ]);
+
+      const row = {
+        iri,
+        label: label || '',
+        type: typeArr.join('; '),
+        definition: definition || '',
+        preferredLabel: preferredLabel || '',
+        alternativeLabel: alternativeLabelArr.join('; '),
+        acronym: acronymArr.join('; '),
+        subClassOf: subClassOfArr.join('; '),
+        subPropertyOf: subPropertyOfArr.join('; '),
+        definitionSource: definitionSourceArr.join('; '),
+        isCuratedIn: isCuratedIn || ''
+      };
+
+      rows.push(row);
     }
 
-    // Remove predicates that have no values for any included subject
-    const usedPreds = Array.from(usedPredsSet);
+    // Fixed columns
+    const allHeaders = [
+      'iri',
+      'label',
+      'type',
+      'definition',
+      'preferred label',
+      'alternative label',
+      'acronym',
+      'rdfs:subClassOf',
+      'rdfs:subPropertyOf',
+      'definition source',
+      'is curated in'
+    ];
 
-    // Build predicate order: priority, then the rest
-    const nonPriority = usedPreds.filter(p => !priorityPreds.includes(p));
-    nonPriority.sort((a, b) => iriToCurieIfCommon(a).localeCompare(iriToCurieIfCommon(b)));
+    const allKeys = [
+      'iri',
+      'label',
+      'type',
+      'definition',
+      'preferredLabel',
+      'alternativeLabel',
+      'acronym',
+      'subClassOf',
+      'subPropertyOf',
+      'definitionSource',
+      'isCuratedIn'
+    ];
 
-    const orderedPredicates = [...priorityPreds.filter(p => usedPredsSet.has(p)), ...nonPriority];
-
-    // Build headers (first column is IRI)
-    const headers = ['iri', ...orderedPredicates.map(iriToCurieIfCommon)];
-    const predicatesAligned = [null, ...orderedPredicates];
-
-    const rows = elementSubjects.map(subj => {
-      const predMap = subjectMap.get(subj.value) || new Map();
-      const row = {};
-      row['iri'] = subj.value;
-
-      for (const p of orderedPredicates) {
-        const values = predMap.get(p) || [];
-        row[p] = values.join('; ');
-      }
-      return row;
+    // Remove columns that are completely empty across rows (except iri)
+    const keepFlags = allKeys.map((key, idx) => {
+      if (key === 'iri') return true;
+      return rows.some(r => (r[key] ?? '').trim() !== '');
     });
+
+    const headers = allHeaders.filter((_, i) => keepFlags[i]);
+    const keys = allKeys.filter((_, i) => keepFlags[i]);
 
     logEvent(fnName, 'built', {
       rowCount: rows.length,
       columnCount: headers.length
     });
 
+    // prune unused keys from rows
+    const prunedRows = rows.map(r => {
+      const obj = {};
+      keys.forEach(k => {
+        obj[k] = r[k] ?? '';
+      });
+      return obj;
+    });
+
     return {
       headers,
-      predicates: predicatesAligned,
-      rows
+      keys,
+      rows: prunedRows
     };
   } catch (err) {
     logError(fnName, err);
@@ -557,14 +717,14 @@ export function buildElementTableModel(store) {
 }
 
 /**
- * Simple in-memory filter & sort for the table model.
+ * Filter & sort rows for the fixed-column model.
  * @param {{
  *   headers: string[],
- *   predicates: (string|null)[],
+ *   keys: string[],
  *   rows: Array<Record<string, string>>
  * }} model
- * @param {string} query global text filter (case-insensitive)
- * @param {number|null} sortIndex column index for sort (0-based), null for none
+ * @param {string} query
+ * @param {number|null} sortIndex
  * @param {'asc'|'desc'} sortDirection
  * @returns {Array<Record<string, string>>}
  */
@@ -577,21 +737,21 @@ export function filterAndSortRows(model, query, sortIndex, sortDirection = 'asc'
 
     let filtered = model.rows;
     if (q) {
-      filtered = filtered.filter(row => {
-        return Object.values(row).some(v => String(v).toLowerCase().includes(q));
-      });
+      filtered = filtered.filter(row =>
+        Object.values(row).some(v => String(v).toLowerCase().includes(q))
+      );
     }
 
     if (sortIndex == null || sortIndex < 0 || sortIndex >= model.headers.length) {
       return filtered;
     }
 
-    const headerKey = sortIndex === 0 ? 'iri' : model.predicates[sortIndex];
-    if (!headerKey) return filtered;
+    const key = model.keys[sortIndex];
+    if (!key) return filtered;
 
     const sorted = [...filtered].sort((a, b) => {
-      const va = String(a[headerKey] ?? '');
-      const vb = String(b[headerKey] ?? '');
+      const va = String(a[key] ?? '');
+      const vb = String(b[key] ?? '');
       const cmp = va.localeCompare(vb);
       return sortDirection === 'asc' ? cmp : -cmp;
     });

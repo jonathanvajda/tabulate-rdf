@@ -6,14 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./styles/normalize.css" />
   <link rel="stylesheet" href="./styles/skeleton.css" />
-  <link rel="stylesheet" href="./styles/app-base.css" />
   <link rel="stylesheet" href="./styles/site-header.css" />
+  <link rel="stylesheet" href="./styles/app-base.css" />
   <link rel="stylesheet" href="./styles/ontology-tabulator.css" />
 </head>
-<body class="ontology-tabulator-root ontology-tabulator-theme-light">
-  <header class="ontology-tabulator-header">
-    <h1 class="ontology-tabulator-header-title">Ontology Tabulator</h1>
-    <div class="ontology-tabulator-header-actions">
+<body data-page-id="ontology-tabulator" class="ontology-tabulator-root ontology-tabulator-theme-light">
+
+  <header id="siteHeader" class="sitehdr-root table-nova-header" role="banner" aria-label="Site header"></header>
+
+  <div class="ontology-tabulator-header-actions">
       <label class="ontology-tabulator-file-label">
         <span>Drop or select ontology files</span>
         <input
@@ -28,7 +29,6 @@
         Toggle Theme
       </button>
     </div>
-  </header>
 
   <main class="ontology-tabulator-main">
     <section class="ontology-tabulator-filelist-section">

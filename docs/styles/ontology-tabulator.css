@@ -1,33 +1,49 @@
-/* Root themes */
+/* =========================================================
+   Ontology Tabulator (scoped)
+   - Relies on global theme tokens: --ont-*
+   - Theme toggled via <html data-theme="dark|light">
+   ========================================================= */
+
 .ontology-tabulator-root {
+  /* App-local tokens */
+  --otr-radius-sm: 4px;
+  --otr-radius-md: 6px;
+
+  --otr-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Derived surfaces */
+  --otr-surface: var(--ont-panel-bg);
+  --otr-surface-soft: color-mix(in srgb, var(--ont-panel-bg) 92%, var(--ont-text) 8%);
+  --otr-surface-ghost: color-mix(in srgb, var(--ont-panel-bg) 96%, transparent);
+
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #f5f5f5;
-  color: #222;
+  font-family: var(--ont-font-body);
+  background-color: var(--ont-bg);
+  color: var(--ont-text);
 }
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark {
-  background-color: #111;
-  color: #eee;
-}
+/* -----------------------------
+   Header
+----------------------------- */
 
-/* Header */
 .ontology-tabulator-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #ccc;
-  background: linear-gradient(to right, #f9f9f9, #e9e9e9);
-}
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-header {
-  background: linear-gradient(to right, #222, #333);
-  border-bottom-color: #444;
+  border-bottom: 1px solid var(--ont-border);
+
+  /* subtle gradient using theme tokens */
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ont-panel-bg) 92%, transparent),
+    color-mix(in srgb, var(--ont-accent-soft) 45%, var(--ont-panel-bg))
+  );
 }
 
 .ontology-tabulator-header-title {
-  font-size: 1.4rem;
+  font-size: 2.75rem;
   margin: 0;
 }
 
@@ -35,59 +51,80 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  margin: 1rem 1rem;
 }
 
-/* Buttons / inputs */
+/* -----------------------------
+   Buttons / Inputs
+   (If you’re using Skeleton buttons, you could drop these and use .button)
+----------------------------- */
+
 .ontology-tabulator-button {
-  border-radius: 4px;
-  border: 1px solid #999;
+  border-radius: var(--otr-radius-sm);
+  border: 1px solid var(--ont-btn-border);
   padding: 0.4rem 0.75rem;
-  background-color: #f0f0f0;
+
+  background-color: transparent;
+  color: var(--ont-btn-text);
+
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
 }
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-button {
-  background-color: #333;
-  border-color: #777;
-  color: #eee;
+.ontology-tabulator-button:hover,
+.ontology-tabulator-button:focus {
+  border-color: var(--ont-btn-hover-border);
+  color: var(--ont-btn-hover-text);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ont-focus) 35%, transparent);
 }
 
 .ontology-tabulator-file-label {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border: 1px dashed #aaa;
+
+  border: 1px dashed var(--ont-border);
   padding: 0.35rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: var(--otr-radius-sm);
+
+  font-size: 1.5rem;
   cursor: pointer;
+
+  background: var(--otr-surface-ghost);
+  color: var(--ont-text);
 }
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-file-label {
-  border-color: #666;
+.ontology-tabulator-file-label:hover {
+  border-color: color-mix(in srgb, var(--ont-border) 70%, var(--ont-text));
 }
 
 .ontology-tabulator-file-input {
   display: none;
 }
 
-/* Main layout */
+/* -----------------------------
+   Main layout
+----------------------------- */
+
 .ontology-tabulator-main {
-  padding: 0rem;
+  padding: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-/*  gap: 1rem; */
-/*  max-width: 1200px; */
-/*  margin: 0 auto; */
+  /* gap: 1rem; */
+  /* max-width: 1200px; */
+  margin: 1rem 1rem auto; 
 }
 
 .ontology-tabulator-section-title {
-  font-size: 1.1rem;
+  font-size: 2.5rem;
   margin: 0 0 0.5rem 0;
 }
 
-/* File list */
+/* -----------------------------
+   File list
+----------------------------- */
+
 .ontology-tabulator-filelist-section {
   margin-bottom: 1rem;
 }
@@ -96,14 +133,18 @@
   list-style: none;
   padding-left: 0;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
 }
 
 .ontology-tabulator-filelist-item {
   padding: 0.25rem 0;
+  color: var(--ont-text);
 }
 
-/* Cards */
+/* -----------------------------
+   Cards
+----------------------------- */
+
 .ontology-tabulator-cards-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -111,42 +152,43 @@
 }
 
 .ontology-tabulator-card {
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background-color: #fff;
+  border-radius: var(--otr-radius-md);
+  border: 1px solid var(--ont-border);
+  background-color: var(--otr-surface);
   padding: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  font-size: 0.9rem;
-}
-
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-card {
-  border-color: #444;
-  background-color: #1b1b1b;
+  box-shadow: var(--otr-shadow);
+  font-size: 1.5rem;
 }
 
 .ontology-tabulator-card-title {
   font-weight: 600;
   margin: 0 0 0.4rem 0;
+  font-size: 3rem;
 }
 
 .ontology-tabulator-card-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 1.35rem;
 }
 
 .ontology-tabulator-card-table-cell-key {
   font-weight: 600;
   padding: 0.15rem 0.3rem;
   vertical-align: top;
+  color: var(--ont-text);
 }
 
 .ontology-tabulator-card-table-cell-value {
   padding: 0.15rem 0.3rem;
   word-break: break-all;
+  color: var(--ont-text);
 }
 
-/* Tables */
+/* -----------------------------
+   Tables (custom HTML tables)
+----------------------------- */
+
 .ontology-tabulator-tables-section {
   display: flex;
   flex-direction: column;
@@ -154,17 +196,13 @@
 }
 
 .ontology-tabulator-table-wrapper {
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background-color: #fff;
+  border-radius: var(--otr-radius-md);
+  border: 1px solid var(--ont-border);
+  background-color: var(--otr-surface);
   padding: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  overflow-x: auto; /* allow wide tables */
-}
+  box-shadow: var(--otr-shadow);
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-table-wrapper {
-  border-color: #444;
-  background-color: #1b1b1b;
+  overflow-x: auto; /* allow wide tables */
 }
 
 .ontology-tabulator-table-header-row {
@@ -177,6 +215,7 @@
 
 .ontology-tabulator-table-title {
   font-weight: 600;
+  font-size: 3rem;
   margin: 0;
 }
 
@@ -186,15 +225,24 @@
 }
 
 .ontology-tabulator-table-filter-input {
-  border-radius: 4px;
-  border: 1px solid #aaa;
+  border-radius: var(--otr-radius-sm);
+  border: 1px solid var(--ont-border);
   padding: 0.25rem 0.4rem;
-  font-size: 0.85rem;
+  font-size: 1.25rem;
+
+  background-color: var(--ont-input-bg);
+  color: var(--ont-input-text);
+}
+
+.ontology-tabulator-table-filter-input:focus {
+  border-color: var(--ont-focus);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ont-focus) 35%, transparent);
 }
 
 .ontology-tabulator-table {
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 1.25rem;
   min-width: 100%;
   /* table-layout: auto so columns size to content */
 }
@@ -202,44 +250,42 @@
 .ontology-tabulator-table thead {
   position: sticky;
   top: 0;
-  background-color: #f4f4f4;
-}
-
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-table thead {
-  background-color: #252525;
+  background-color: var(--otr-surface-soft);
 }
 
 .ontology-tabulator-table-header-cell,
 .ontology-tabulator-table-data-cell {
-  border: 1px solid #ddd;
+  border: 1px solid var(--ont-table-border);
   padding: 0.2rem 0.3rem;
   vertical-align: top;
+
   word-wrap: break-word;
   overflow-wrap: break-word;
-  min-width: 160px;
-}
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-table-header-cell,
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-table-data-cell {
-  border-color: #444;
+  min-width: 160px;
 }
 
 .ontology-tabulator-table-header-cell {
   cursor: pointer;
-  max-width: 220px;   /* cap header width */
+  max-width: 220px;    /* cap header width */
   white-space: normal; /* allow wrapping */
+  color: var(--ont-text);
 }
 
 .ontology-tabulator-table-header-cell-sortable::after {
   content: " ⇅";
-  font-size: 0.7em;
+  font-size: 1.25rem;
+  color: var(--ont-muted);
 }
 
-/* Loading overlay */
+/* -----------------------------
+   Loading overlay
+----------------------------- */
+
 .ontology-tabulator-loading-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0,0,0,0.15);
+  background-color: color-mix(in srgb, #000 15%, transparent);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -254,8 +300,10 @@
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  border: 4px solid #ccc;
-  border-top-color: #777;
+
+  border: 4px solid var(--ont-border);
+  border-top-color: color-mix(in srgb, var(--ont-text) 55%, var(--ont-border));
+
   animation: ontology-tabulator-spin 0.9s linear infinite;
 }
 
@@ -263,7 +311,10 @@
   to { transform: rotate(360deg); }
 }
 
-/* Mermaid section */
+/* -----------------------------
+   Mermaid section
+----------------------------- */
+
 .ontology-tabulator-mermaid-section {
   max-width: 1200px;
   margin: 1rem auto;
@@ -272,17 +323,19 @@
 
 .ontology-tabulator-mermaid-pre {
   font-size: 0.8rem;
-  background-color: #fafafa;
-  border-radius: 4px;
+  background-color: var(--ont-code-bg);
+  border: 1px solid var(--ont-code-border);
+  border-radius: var(--otr-radius-sm);
   padding: 0.75rem;
   overflow-x: auto;
+  color: var(--ont-text);
+  font-family: var(--ont-font-mono);
 }
 
-.ontology-tabulator-root.ontology-tabulator-theme-dark .ontology-tabulator-mermaid-pre {
-  background-color: #181818;
-}
+/* -----------------------------
+   Wider columns for IRI and definition-like fields
+----------------------------- */
 
-/* Wider columns for IRI and definition-like fields */
 .ontology-tabulator-table-header-cell[data-col-key="iri"],
 .ontology-tabulator-table-data-cell[data-col-key="iri"] {
   min-width: 280px;
